@@ -192,3 +192,23 @@ for i in range(n):
     sts[i,0] = int(a)
     sts[i,1]= int(b)
     
+Y = np.array([tx,usd])
+#X = np.array([np.ones(n), tp, leg, r, sts, costs.transpose() ,islegend, BT])
+X = np.array([np.ones(n), tp,  r, islegend])
+X = np.vstack((X, sts.transpose()[0].transpose()))
+X = np.vstack((X, sts.transpose()[1].transpose()))
+
+X = np.vstack((X, leg.transpose()[0].transpose()))
+X = np.vstack((X, leg.transpose()[1].transpose()))
+X = np.vstack((X, leg.transpose()[2].transpose()))
+X = np.vstack((X, leg.transpose()[3].transpose()))
+X = np.vstack((X, leg.transpose()[4].transpose()))
+X = np.vstack((X, leg.transpose()[5].transpose()))
+
+X = np.vstack((X, BT.transpose()[0]))
+X = np.vstack((X, BT.transpose()[1]))
+X = np.vstack((X, BT.transpose()[2]))
+X = np.vstack((X, BT.transpose()[3]))
+X = np.vstack((X, BT.transpose()[4]))
+X = np.vstack((X, BT.transpose()[5]))
+X = np.vstack((X, BT.transpose()[6]))
