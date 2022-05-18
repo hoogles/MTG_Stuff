@@ -170,5 +170,25 @@ tx = df["Price (tix)"].to_numpy()
 usd = df["Price (USD)"].to_numpy()
 
 leg = df["Legality"].to_numpy()
-
+sts = np.zeros([n,2])
+for i in range(n):
+    stat = df.iloc[i]["stats"]
+    a =0
+    b =0
+    if "Loyalty" in stat:
+        a= (stat.split(":")[-1].strip(" "))
+        if "*" in a or "X" in a:
+            a = -1
+        else:
+            a = int(a)
+        b=a
+    else:
+        a = (stat.split("/")[0])
+        b = (stat.split("/")[1])
+        if "*" in a or "X" in a:
+            a = -1
+        if "*" in b or "X" in b:
+            b = -1
+    sts[i,0] = int(a)
+    sts[i,1]= int(b)
     
