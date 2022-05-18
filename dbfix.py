@@ -37,14 +37,20 @@ def binification(X):
     
     return y
 df = pd.read_csv("round2.csv")
-
-types = set([t.lower().strip(" ") for subtype in df["Type"] for t in subtype.split(",")])
+df = pd.read_pickle("round2.pickle")
+n= len(df)
+is_leg = np.zeros(n)
+for i in range(n):
+    is_leg[i] = sum(df.iloc[i]["Legality"])>0
+df = df.iloc[is_leg>0] #remove illefgal cards
+    
+types = set([t.lower().strip(" ") for subtypes in df["Type"] for t in subtypes])
 mainTypes = ["artifact", "creature", "enchantment",  "instant", "land", "planeswalker", "sorcery"]
-islegend = ["legendary" in subtype.lower()  for subtype in df["Type"]]
+islegend = ["legendary" in subtype  for subtype in df["Type"]]
 df["Is Legendary"] = islegend
 
 boolTypes = np.zeros(len(mainTypes))
-df["Bool Types"] = [([int(i in df.loc[j]["Type"].lower()) for i in mainTypes]) for j in df.index]
+df["Bool Types"] = [([int(i in df.loc[j]["Type"]) for i in mainTypes]) for j in df.index]
 
 df.loc[df["Rarity"]== "Common", "Rarity"] = 0
 df.loc[df["Rarity"]== "Uncommon", "Rarity"] = 1
@@ -60,57 +66,59 @@ n = len(BT)
 
 costs = np.zeros((8,n)) #[W U B R G C generic X]
 
+
 for i in range(n):
-
-    cost_s = df.loc[i]["Mana Cost"].replace(" ", "").split(",")
-
-    for cost in cost_s:
-        if "H" in cost:
-            costs[0,i] = -1
-        elif "W" in cost:
-            if cost=="W" or "/" in cost:
-                costs[0,i] = 1 
+    cost_s = df.iloc[i]["Mana Cost"]
+    if cost_s != [0]:
+        for cost in cost_s:
+            
+                
+            if "H" in cost:
+                costs[0,i] = -1
+            elif "W" in cost:
+                if cost=="W" or "/" in cost:
+                    costs[0,i] = 1 
+                else:
+                    costs[0, i] = int(cost.replace("W", ""))
+    
+            elif "U" in cost:
+                if cost=="U" or "/" in cost:
+                    costs[1,i] += 1
+                else:
+                    costs[1,i] += int(cost.replace("U", ""))
+            elif "B" in cost :
+                if cost=="B" or "/" in cost:
+                    costs[2,i] = 1
+                else:
+                    costs[2,i] = int(cost.replace("B", ""))
+            elif "R" in cost:
+                if cost=="R" or "/" in cost:
+                    costs[3,i] = 1
+                else:
+    
+                    costs[3,i] = int(cost.replace("R", ""))
+            elif "G" in cost :
+                if cost=="G" or "/" in cost:
+                    costs[4,i] = 1
+                else:
+    
+                    costs[4,i] = int(cost.replace("G", ""))
+            elif "C" in cost or "S"  in cost:
+                if cost=="C" or cost =="S":
+                    costs[5,i] = 1
+                else:
+    
+                    costs[5,i] = int(cost.replace("C", "").replace("S", ""))
+            elif "X" in cost:
+                costs[7,i] +=1
+    
             else:
-                costs[0, i] = int(cost.replace("W", ""))
-
-        elif "U" in cost:
-            if cost=="U" or "/" in cost:
-                costs[1,i] += 1
-            else:
-                costs[1,i] += int(cost.replace("U", ""))
-        elif "B" in cost :
-            if cost=="B" or "/" in cost:
-                costs[2,i] = 1
-            else:
-                costs[2,i] = int(cost.replace("B", ""))
-        elif "R" in cost:
-            if cost=="R" or "/" in cost:
-                costs[3,i] = 1
-            else:
-
-                costs[3,i] = int(cost.replace("R", ""))
-        elif "G" in cost :
-            if cost=="G" or "/" in cost:
-                costs[4,i] = 1
-            else:
-
-                costs[4,i] = int(cost.replace("G", ""))
-        elif "C" in cost or "S"  in cost:
-            if cost=="C" or cost =="S":
-                costs[5,i] = 1
-            else:
-
-                costs[5,i] = int(cost.replace("C", "").replace("S", ""))
-        elif "X" in cost:
-            costs[7,i] +=1
-
-        else:
-            costs[6,i] = int(cost)
+                costs[6,i] = int(cost)
       
 dftext =[]
 for i in range(n):
-    ctxt = str(df.loc[i]["Rules Text"])
-    cname = df.loc[i]["Name"]
+    ctxt = str(df.iloc[i]["Rules Text"])
+    cname = df.iloc[i]["Name"]
     dftext.append((ctxt.replace(cname, "Self")))
 
 tvec = CountVectorizer()
@@ -153,18 +161,14 @@ dataset = dataset.cache().prefetch(buffer_size=AUTOTUNE)
 
 dataset = dataset.shuffle(10000).batch(1024, drop_remainder=True)
 cvec = sklearn.feature_extraction.text.CountVectorizer()
-#X = cvec.fit_transform(dftext)
-#X2 = X.toarray()
+X = cvec.fit_transform(dftext)
+X2 = X.toarray()
 
 
-#check to see if things are working
 
-r = df["Rarity"].to_numpy(dtype="int")
-X = np.array([np.zeros(n), (r)])
-legality = dataset.df["Legality"]
-y = np.vstack(legality)
-from sklearn.ensemble import RandomForestClassifier
+tx = df["Price (tix)"].to_numpy()
+usd = df["Price (USD)"].to_numpy()
 
-rfc = RandomForestClassifier()
-rfc.fit(X.transpose(), y.transpose()[-2]) #-2 is pauper, which restricts basef off of rarity which is what our x axis is.
-rfc.score(X.transpose(),y.transpose()[-2]) #result is 0.974. Nice
+leg = df["Legality"].to_numpy()
+
+    
