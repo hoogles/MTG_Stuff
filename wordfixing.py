@@ -521,48 +521,76 @@ def lose(x):
 
 def tap(x):
     
-    return 0
+    return "tap" in x.lower().split() or "tapped" in x.lower().split()
 
 def untap(x):
     
-    return 0
+    return "untap" in x.lower().split() or "untapped" in x.lower().split()
 
 def wish(x):
     
     return "outside the game" in x.lower()
 def cheat_out(x):
+   
+    n = int("without paying" in x.lower())
+    eff = re.findall("put (.*?) onto the battlefield", x.lower())
+    n+=len(eff)
     
-    return 0
+    return n
 
 def doubling(x):
+    n  = len(re.findall("double", x.lower())) + len(re.findall("twice",x.lower()))
     
-    return 0
+    return n
 
 def halving(x):
     
-    return 0
+    return len(re.findall("half", x.lower())) 
 
 def flicker(x):
+    substr = "exile (.*?) return (.*?) to the battlefield"
     
-    return 0
+    return len(re.findall(substr, x.lower()))
 
 def unblock(x):
     
-    return 0
+    return ("unblock" in x.lower() or "can’t be blocked" in x.lower()) or "can’t block" in x.lower()
 
 def extrastep(x):
     
-    return 0
+    return "additional" in x.lower() and "phase" in x.lower()
 
 def stax(x):
-    
-    return 0
+    #n = int("opponents can’t" in x.lower() or "player's can’t" in x.lower())
+    return "can’t" in x.lower() and "prevent" not in x.lower() 
 
 def no_hand_limit(x):
     return "hand limit" in x.lower()
 ###############################################################################
 #                             end of effects                                  #
 ###############################################################################
+
+###############################################################################
+#                             start of triggers                               #
+###############################################################################
+
+
+###############################################################################
+#                             end of triggers                                 #
+###############################################################################
+
+
+
+###############################################################################
+#                             start of targets                                #
+###############################################################################
+
+
+###############################################################################
+#                             end of targets                                  #
+###############################################################################
+
+
 def get_condition(card):
     condi = None
     if card["Type"]=="Sorcery" or card["Type"]=="Instant":
