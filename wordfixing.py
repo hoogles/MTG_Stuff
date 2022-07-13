@@ -609,7 +609,8 @@ def on_draw(x):
 
 #might ommit this one, yo can just say "its a PW"
 def loyalty(x):
-    return 0
+    eff = re.findall("\+.\:", x.lower()) + re.findall("\+.\:", x.lower())
+    return len(eff)>0
 
 def passive(x):
     when = "when" in x.lower()
