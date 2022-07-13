@@ -566,6 +566,9 @@ def stax(x):
 
 def no_hand_limit(x):
     return "hand limit" in x.lower()
+
+def steal(x):
+    return int("gain control" in x.lower())
 ###############################################################################
 #                             end of effects                                  #
 ###############################################################################
@@ -573,6 +576,80 @@ def no_hand_limit(x):
 ###############################################################################
 #                             start of triggers                               #
 ###############################################################################
+def on_cast(x):
+    eff = re.findall("whenever (.*?) cast",x.lower())
+    return len(eff)>0
+
+
+def magecraft(x):
+    eff = re.findall("whenever (.*?) copy", x.lower())
+    return len(eff)>0 
+
+def on_etb(x):
+    eff = re.findall("when (.*?) enters the battlefield",x.lower()) + re.findall("whenever (.*?) enters the battlefield",x.lower())
+    return len(eff)>0
+
+def on_death(x):
+    eff = re.findall("when (.*?) dies",x.lower()) + re.findall("whenever (.*?) dies",x.lower())
+    eff +=  re.findall("when (.*?) destroy",x.lower()) + re.findall("whenever (.*?) destroy",x.lower())
+    return len(eff)>0
+
+def on_discard(x):
+    n = int("madness" in x.lower())
+    n += len(re.findall("when(.*?) discard",x.lower()))
+    return n>0
+
+def on_exile(x):
+    eff = re.findall("when (.*?) exile",x.lower()) + re.findall("whenever (.*?) exile",x.lower())
+    return len(eff)>0
+
+def on_draw(x):
+    eff = re.findall("whenever (.*?) draw",x.lower())
+    return len(eff)>0
+
+#might ommit this one, yo can just say "its a PW"
+def loyalty(x):
+    return 0
+
+def passive(x):
+    when = "when" in x.lower()
+    colon = ":" in x
+    eot = "end of turn" in x.lower() 
+    uk = "at the begin" in x.lower() 
+    return not when and not colon and not eot and not uk
+
+def second_spell(x):
+    
+    return "second spell" in x.lower()
+
+#note to self, do better with names
+def on_cost(x):
+    eff1 = "kicked" in x.lower()
+    eff2 = "may pay" in x.lower()
+
+    return eff1 or eff2
+
+def on_life_gain(x):
+    eff = re.findall("when (.*?) gain life",x.lower()) + re.findall("whenever (.*?) gain life",x.lower())
+    return len(eff)>0
+
+def on_life_loss(x):
+    eff1 = "if an opponent lost life" in x.lower()
+    eff = re.findall("when (.*?) damage" , x.lower()) + re.findall("whenever (.*?) damage" , x.lower())
+    eff2 =  re.findall("life (.*?) lost",x.lower())
+    eff += eff2
+    #eff = eff2
+    return len(eff)>0 or eff1
+
+def on_attack(x):
+    eff = re.findall("when (.*?) attack",x.lower()) + re.findall("whenever (.*?) attack",x.lower())
+    return len(eff)>0
+
+def on_step(x):
+    abo = "at the beginnning of" in x.lower()
+    during = "during" in x.lower()
+    step = "step" in x.lower()
+    return abo or during or step 
 
 
 ###############################################################################
@@ -584,6 +661,15 @@ def no_hand_limit(x):
 ###############################################################################
 #                             start of targets                                #
 ###############################################################################
+
+def target_self(x):
+    return "you" in x.lower()
+
+
+
+def target_spell(x):
+    return "target spell" in x.lower()
+
 
 
 ###############################################################################
