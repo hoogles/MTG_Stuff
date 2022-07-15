@@ -18,7 +18,7 @@ from word2vec import generate_training_data
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.pipeline import Pipeline
-
+import wordfixing
 
 
 def sigmoid(x):
@@ -36,16 +36,16 @@ def binification(X):
     
     
     return y
-df = pd.read_csv("round2.csv")
-df = pd.read_pickle("round2.pickle")
-n= len(df)
+#df = pd.read_csv("round2.csv")
+df2 = pd.read_pickle("db3.pickle")
+n= len(df2)
 is_leg = np.zeros(n)
 for i in range(n):
-    is_leg[i] = sum(df.iloc[i]["Legality"])>0
-df = df.iloc[is_leg>0] #remove illefgal cards
-    
+    is_leg[i] = sum(df2.iloc[i]["Legality"])>0
+df = df2.iloc[is_leg>0] #remove illefgal cards
+n = len(df)
 types = set([t.lower().strip(" ") for subtypes in df["Type"] for t in subtypes])
-mainTypes = ["artifact", "creature", "enchantment",  "instant", "land", "planeswalker", "sorcery"]
+mainTypes = ["Artifact", "Creature", "Enchantment",  "Instant", "Land", "Planeswalker", "Sorcery"]
 islegend = ["legendary" in subtype  for subtype in df["Type"]]
 df["Is Legendary"] = islegend
 
@@ -168,8 +168,18 @@ X2 = X.toarray()
 
 tx = df["Price (tix)"].to_numpy()
 usd = df["Price (USD)"].to_numpy()
+tp = df["times printed"].to_numpy()
 
-leg = df["Legality"].to_numpy()
+leg = np.array(df["Legality"].to_numpy().tolist())
+r = df["Rarity"].to_numpy()
+
+card_info = []
+for i in range(n):
+    
+    card = df.iloc[i]
+    cr = wordfixing.card_reader(card)
+    card_info.append(cr.translated)
+
 sts = np.zeros([n,2])
 for i in range(n):
     stat = df.iloc[i]["stats"]
@@ -192,6 +202,7 @@ for i in range(n):
     sts[i,0] = int(a)
     sts[i,1]= int(b)
     
+    
 Y = np.array([tx,usd])
 #X = np.array([np.ones(n), tp, leg, r, sts, costs.transpose() ,islegend, BT])
 X = np.array([np.ones(n), tp,  r, islegend])
@@ -212,3 +223,40 @@ X = np.vstack((X, BT.transpose()[3]))
 X = np.vstack((X, BT.transpose()[4]))
 X = np.vstack((X, BT.transpose()[5]))
 X = np.vstack((X, BT.transpose()[6]))
+
+for ct in np.array(card_info).T:
+    X = np.vstack((X, ct))
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X.T, Y[1], random_state=1)
+
+
+
+
+
+class skipgraming:
+    
+    
+    
+    def get_skipgrams(dftext):
+        vocab = {}
+        index = 1
+        vocab['<pad>'] = 0
+        for rules in dftext:
+            tokens = list(rules.lower().split())
+            for token in tokens:
+                if token not in vocab:
+                    vocab[token] = index
+                    index += 1
+        inverse_vocab = {index: token for token, index in vocab.items()}
+        example_sequence = []
+        vocab_size = len(vocab)
+        for rules in dftext:
+            tokens = list(rules.lower().split())
+            seq = [vocab[word] for word in tokens]
+            example_sequence = example_sequence + seq
+        window_size = 3
+        positive_skip_grams, _ = tf.keras.preprocessing.sequence.skipgrams(
+              example_sequence,
+              vocabulary_size=vocab_size,
+              window_size=window_size,
+              negative_samples=0)
