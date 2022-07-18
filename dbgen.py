@@ -45,6 +45,8 @@ class mtg_df:
         legality[7]  = int(lgls2[i7]=="Legal")
         
         return legality
+    
+    
     def get_times_printed(self, url, cname):
         n=1
         cnamemod = "-".join(cname.split())
@@ -81,8 +83,10 @@ class mtg_df:
             soup = BS(x, 'html.parser')
             ctext = soup.find("div",{"class":"card-text"})
             camount = 1
-            
-            cprice = float(re.findall("usd\">(.*?)<",x)[0].strip("$"))
+            try:
+                cprice = float(re.findall("usd\">(.*?)<",x)[0].strip("$"))
+            except:
+                cprice = 0
             try:
                 cpricetx = float(re.findall("tix\">(.*?)<",x)[0].strip("$").strip(","))
             except:
@@ -192,7 +196,79 @@ class mtg_df:
                     except:
                         print("failed" + url)
         
-                
+    def pull_new_card(self, url):
+        resp = requests.get(url)
+        if resp.status_code==200:
+            x = resp.text
+            op = []
+            soup = BS(x, 'html.parser')
+            ctext = soup.find("div",{"class":"card-text"})
+            camount = 1
+            try:
+                cprice = float(re.findall("usd\">(.*?)<",x)[0].strip("$"))
+            except:
+                cprice = 0
+            try:
+                cpricetx = float(re.findall("tix\">(.*?)<",x)[0].strip("$").strip(","))
+            except:
+                cpricetx = 0
+            cname = ctext.find("span", {"class":"card-text-card-name"}).text.strip("\n ")
+            ctype = ctext.find("p", {"class":"card-text-type-line"}).text.strip("\n ")
+            cstats = ""
+            try:
+                cstats = soup.find("div", {"class":"card-text-stats"}).text.strip("\n ")
+            except: #tbh theres so many exceptions to the rule "only creatures have power" that it's an exception in the code too. 
+                cstats = "0/0"
+            ccost = 0
+            ccost_list = []
+            try:
+                ccost = ctext.find("span", {"class":"card-text-mana-cost"}).text
+                ccost_list = self.clean_cost(ccost)
+            except:
+                ccost = 0
+                ccost_list = [0]
+            crules = ""
+            try:
+                crules = ctext.find("div", {"class":"card-text-oracle"}).text.replace('\n', ' ')
+            except:
+                crules = ""
+            crarity = ""
+            try:
+                crarity = soup.find("span", {"class":"prints-current-set-details"}).text.strip("\n ").split()[2]
+            except:
+                crarity = ""
+            ctype_list = ctype.replace("—", "").split()
+            clegality = self.get_legality(ctext)
+            
+            is_reserved = len(soup.findAll("p", {"class":"card-text-artist"}))==2
+            is_basic = ctype_list.count("Basic")==1
+            #omitting reserve lists and basic lands since one is arbitrarily low and basic lands are considered free
+            try:
+                camount = self.get_times_printed(url, cname)
+            except:
+                camount = 1
+            op.append(cname)
+            op.append(ccost_list)
+            op.append(ctype_list)
+            op.append(crules)
+            op.append(crarity)
+            op.append(cprice)
+            op.append(cstats)
+            op.append(camount)
+            op.append(clegality)
+            op.append(cpricetx)
+
+
+            self.df.loc[cname] = {'Name': cname,'Mana Cost':ccost, 
+                                     'Type':ctype, 'Rules Text':crules, 
+                                     'Rarity':crarity, 'Price (USD)':0, 
+                                     'stats':cstats, 'times printed':1, 
+                                     "Date":"0000-00-00", "Legality":[1,1,1,1,1,1,1], 
+                                     "Price (tix)":0}
+
+            self.df
+            
+        return 0            
     def __init__(self):
         self.df = pd.DataFrame(columns={'Name','Mana Cost', 'Type', 'Rules Text', 'stats', 'Rarity', 'Price (USD)','Price (tix)', 'times printed', 'Date',"Legality"})
         self.df.set_index('Name')
