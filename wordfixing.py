@@ -804,7 +804,8 @@ class card_reader:
                 speed = 1
             if "activate only as a sorcery" in x.lower():
                 speed = 0
-        
+            if "Artifact" in ctype or "haste" in x.lower():
+                speed = 1
         return speed  
     
     
@@ -815,7 +816,7 @@ class card_reader:
 
         self.rules = card["Rules Text"].split(". ")
         self.translated = [0]*90
-        self.translated[-1] = len(self.rules) -1
+        self.translated[-1] = len(self.rules) 
         spd = self.speed( card["Rules Text"], card["Type"])
         self.translated[0] += spd
         for i in range(len(self.rules)-1):
