@@ -121,10 +121,15 @@ class mtg_df:
             
             is_reserved = len(soup.findAll("p", {"class":"card-text-artist"}))==2
             is_basic = ctype_list.count("Basic")==1
+            
+            
+            
+            
             #omitting reserve lists and basic lands since one is arbitrarily low and basic lands are considered free
             if is_reserved==False and is_basic == False:
                 try:
                     camount = self.get_times_printed(url, cname)
+                    
                 except:
                     camount = 1
                 op.append(cname)
@@ -155,26 +160,28 @@ class mtg_df:
                 cdata =[]
                 #if url=="card-grid-item-card":
                 url = str(grid.findAll("a")[i]).split("href=\"")[1].split("\"")[0]
-                try:
-                    cdata = self.pull_card(url)
-                except:
-                    print(str(i) + " failed " + url)
-                if len(cdata)>0:
-                    if cdata[7]>1:
-
-                        self.df.loc[cdata[0]] = {'Name': cdata[0],'Mana Cost':cdata[1], 
-                                                 'Type':cdata[2], 'Rules Text':cdata[3], 
-                                                 'Rarity':cdata[4], 'Price (USD)':cdata[5], 
-                                                 'stats':cdata[6], 'times printed':cdata[7], 
-                                                 "Date":date_released, "Legality":cdata[8], 
-                                                 "Price (tix)":cdata[9]}
-                    else:
-                        self.df.loc[cdata[0]] =  {'Name': cdata[0],'Mana Cost':cdata[1], 
-                                                 'Type':cdata[2], 'Rules Text':cdata[3], 
-                                                 'Rarity':cdata[4], 'Price (USD)':cdata[5], 
-                                                 'stats':cdata[6], 'times printed':cdata[7], 
-                                                 "Date":date_released, "Legality":cdata[8], 
-                                                 "Price (tix)":cdata[9]}
+                cname = str(grid.findAll("span")[i]).split(">")[1].split("<")[0]
+                if cname not in self.df["Name"]:
+                    try:
+                        cdata = self.pull_card(url)
+                    except:
+                        print(str(i) + " failed " + url)
+                    if len(cdata)>0:
+                        if cdata[7]>1:
+    
+                            self.df.loc[cdata[0]] = {'Name': cdata[0],'Mana Cost':cdata[1], 
+                                                     'Type':cdata[2], 'Rules Text':cdata[3], 
+                                                     'Rarity':cdata[4], 'Price (USD)':cdata[5], 
+                                                     'stats':cdata[6], 'times printed':cdata[7], 
+                                                     "Date":date_released, "Legality":cdata[8], 
+                                                     "Price (tix)":cdata[9]}
+                        else:
+                            self.df.loc[cdata[0]] =  {'Name': cdata[0],'Mana Cost':cdata[1], 
+                                                     'Type':cdata[2], 'Rules Text':cdata[3], 
+                                                     'Rarity':cdata[4], 'Price (USD)':cdata[5], 
+                                                     'stats':cdata[6], 'times printed':cdata[7], 
+                                                     "Date":date_released, "Legality":cdata[8], 
+                                                     "Price (tix)":cdata[9]}
     
     def pull_sets(self):
         
