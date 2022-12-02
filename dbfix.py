@@ -20,6 +20,14 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.pipeline import Pipeline
 import wordfixing
 
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from scikeras.wrappers import KerasRegressor
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import KFold
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+
 from datetime import datetime
 def sigmoid(x):
     return 1/(1 + np.exp(-x))
@@ -153,9 +161,13 @@ def convert_mtg_df(df):
                 a = -1
             if "*" in b or "X" in b:
                 b = -1
-        sts[i,0] = int(a)
-        sts[i,1]= int(b)
-
+                
+        try:
+            sts[i,0] = int(a)
+            sts[i,1]= int(b)
+        except:
+            sts[i,0] = -1
+            sts[i,1]= -1
 
     Timeset = []
     for t in df["Date"]:
@@ -194,7 +206,7 @@ def convert_mtg_df(df):
         X = np.vstack((X, ct))        
     return X, Y
 #df = pd.read_csv("round2.csv")
-df2 = pd.read_pickle("db3.pickle")
+df2 = pd.read_pickle("datasetplusbro.pickle")
 n= len(df2)
 is_leg = np.zeros(n)
 for i in range(n):
@@ -306,31 +318,22 @@ from sklearn.ensemble import RandomForestRegressor
 
 model = RandomForestRegressor(n_estimators=1000)
 model.fit(X_train,y_train)
-#model.fit(X.T,Y[1]) overfit, aka goal
-class skipgraming:
-    
-    
-    
-    def get_skipgrams(dftext):
-        vocab = {}
-        index = 1
-        vocab['<pad>'] = 0
-        for rules in dftext:
-            tokens = list(rules.lower().split())
-            for token in tokens:
-                if token not in vocab:
-                    vocab[token] = index
-                    index += 1
-        inverse_vocab = {index: token for token, index in vocab.items()}
-        example_sequence = []
-        vocab_size = len(vocab)
-        for rules in dftext:
-            tokens = list(rules.lower().split())
-            seq = [vocab[word] for word in tokens]
-            example_sequence = example_sequence + seq
-        window_size = 3
-        positive_skip_grams, _ = tf.keras.preprocessing.sequence.skipgrams(
-              example_sequence,
-              vocabulary_size=vocab_size,
-              window_size=window_size,
-              negative_samples=0)
+
+
+
+
+def mtg_model():
+	# create model
+	model = Sequential()
+	model.add(Dense(25, input_shape=(118,), kernel_initializer='normal', activation='relu'))
+	model.add(Dense(1, kernel_initializer='normal'))
+	# Compile model
+	model.compile(loss='mean_squared_error', optimizer='adam')
+	return model
+
+
+estimators = []
+estimators.append(('standardize', StandardScaler()))
+estimators.append(('mlp', KerasRegressor(model=mtg_model, epochs=100, batch_size=5, verbose=0)))
+
+pipeline = Pipeline(estimators)
